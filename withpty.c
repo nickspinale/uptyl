@@ -56,26 +56,25 @@ int main(int argc, char **argv) {
     argv[argc - 1] = NULL;
 
     if ((slave = open(pty_path, O_RDWR)) == -1) {
-        perror("here");
+        perror("");
         return -1;
     }
  
-    /* if (setsid() == -1) { */
-    /*     perror("there"); */
-    /*     return -1; */
-    /* } */
+    if (setsid() == -1) {
+        perror("");
+        return -1;
+    }
 
-    /* if (ioctl(slave, TIOCSCTTY, (char *)NULL)) { */
-    /*     perror("nowhere"); */
-    /*     return -1; */
-    /* } */
+    if (ioctl(slave, TIOCSCTTY, (char *)NULL)) {
+        perror("");
+        return -1;
+    }
 
     for (i = 0; i < 3; i++) {
         if (fds & (1 << i)) {
             dup2(slave, i);
         }
     }
-    printf("hi");
     execvp(slave_argv[0], slave_argv);
 
     return -1;
