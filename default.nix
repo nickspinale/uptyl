@@ -6,5 +6,6 @@ stdenv.mkDerivation {
     source $stdenv/setup
     mkdir -p $out/bin
     gcc -lutil -o $out/bin/parpty ${./parpty.c}
+    gcc -lutil -o $out/bin/withpty ${./withpty.c}
   '';
 }

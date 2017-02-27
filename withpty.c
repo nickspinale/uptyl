@@ -3,6 +3,8 @@
 #include <pty.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <termios.h>
@@ -11,17 +13,17 @@ extern char *program_invocation_short_name;
 
 static void usage(int code) {
     FILE *out = code ? stderr : stdout;
-    fprintf(out, "USAGE: %s [-ioe] DRIVER_SCRIPT SLAVE [SLAVE_ARGS ...]\n", program_invocation_short_name);
+    fprintf(out, "USAGE: %s [-ioe] TTY_PATH SLAVE [SLAVE_ARGS ...]\n", program_invocation_short_name);
     exit(code ? 1 : 0);
 }
 
 int main(int argc, char **argv) {
 
-    int master, slave, pid;
+    int slave;
     char master_s[16];
 
     int fds = 0;
-    char *driver_script, **slave_argv;
+    char *pty_path, **slave_argv;
     int c, i;
 
     while ((c = getopt(argc, argv, "hioe")) != -1) {
@@ -46,42 +48,35 @@ int main(int argc, char **argv) {
         usage(1);
     }
 
-    driver_script = argv[optind];
+    pty_path = argv[optind];
     slave_argv = argv + optind;
     for (i = optind; i < argc - 1; i++) {
         argv[i] = argv[i + 1];
     }
     argv[argc - 1] = NULL;
 
-    if (openpty(&master, &slave, NULL, NULL, NULL)) {
+    if ((slave = open(pty_path, O_RDWR)) == -1) {
+        perror("here");
         return -1;
     }
  
-    switch (pid = fork ()) {
-        case -1:
-            close(master);
-            close(slave);
-            break;
-        case 0:
-            close(master);
-            setsid();
-            if (ioctl(slave, TIOCSCTTY, (char *)NULL)) {
-                return -1;
-            }
-            for (i = 0; i < 3; i++) {
-                if (fds & (1 << i)) {
-                    dup2(slave, i);
-                }
-            }
-            execvp(slave_argv[0], slave_argv);
-            printf("no\n");
-            break;
-        default:
-            close(slave);
-            sprintf(master_s, "%d", master);
-            execvp("sh", (char *const[]) {"sh", "-c", driver_script, master_s, NULL});
-            break;
+    /* if (setsid() == -1) { */
+    /*     perror("there"); */
+    /*     return -1; */
+    /* } */
+
+    /* if (ioctl(slave, TIOCSCTTY, (char *)NULL)) { */
+    /*     perror("nowhere"); */
+    /*     return -1; */
+    /* } */
+
+    for (i = 0; i < 3; i++) {
+        if (fds & (1 << i)) {
+            dup2(slave, i);
+        }
     }
+    printf("hi");
+    execvp(slave_argv[0], slave_argv);
 
     return -1;
 }
