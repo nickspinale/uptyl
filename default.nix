@@ -6,6 +6,6 @@ stdenv.mkDerivation {
     source $stdenv/setup
     mkdir -p $out/bin
     gcc -lutil -o $out/bin/parpty ${./parpty.c}
-    cp ${./tmuxdo} $out/bin
+    cp ${./tmuxdo} $out/bin/tmuxdo
   '';
 }
