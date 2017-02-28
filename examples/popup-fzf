@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Fancily choose a variable from the environment
+# Filter stdin to stdout using fzf in a popup urxvt window.
 
 # Notes on urxvt:
 #   * +9999 as a geometry offset seems to just center the window.
@@ -8,4 +8,4 @@
 #   * An empty or 0 value for the '*transient-for' resource seems to just
 #     mean the root window. This behavior is also undocumented.
 
-env | cut -d '=' -f 1 | parpty -e 'urxvt -pty-fd $0 -geometry 40x25+9999+9999 -xrm "*transient-for: 0"' fzf
+parpty -e 'urxvt -pty-fd $0 -geometry 40x25+9999+9999 -xrm "*transient-for: 0"' fzf

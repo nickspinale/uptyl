@@ -1,0 +1,144 @@
+#!/bin/sh
+
+# TODO handle zoomed panes
+
+usage="tmuxdo [-ioe] [-u|d|l|r] [-s SIZE[%]] [--] CMD [ARGS ...]"
+
+dup_in=""
+dup_out=""
+dup_err=""
+direction="d"
+size=""
+
+while getopts 'ioeudlrs:' optchar; do
+    case "$optchar" in
+        i) dup_in=1 ;;
+        o) dup_out=1 ;;
+        e) dup_err=1 ;;
+        u) direction=u ;;
+        d) direction=d ;;
+        l) direction=l ;;
+        r) direction=r ;;
+        s) size="$OPTARG" ;;
+        h)
+            echo "$usage"
+            exit 0
+            ;;
+    esac
+done
+
+shift $(expr $OPTIND - 1)
+
+if [ -z "$1" ]; then
+    echo "$usage" >&2
+    exit 0
+fi
+
+cmd=""
+
+for arg in "$@"; do
+    arg="$(printf '%s' "$arg" | sed 's/"/\\"/g' | sed 's/`/\\`/g')"
+    cmd="$cmd \"$arg\""
+done
+
+opt=""
+swap=""
+close=""
+
+case "$direction" in
+    u)
+        opt="-d"
+        swap="; swap-pane -D ; select-pane -U"
+        close="; tmux swap-pane -D"
+        ;;
+    d)
+        opt=""
+        ;;
+    l)
+        opt="-h -d"
+        swap="; swap-pane -D ; select-pane -L"
+        close="; tmux swap-pane -D"
+        ;;
+    r)
+        opt="-h"
+        ;;
+esac
+
+if [ -n "$size" ]; then
+    percent="$(echo "$size" | sed -nE 's/^([0-9]+)%$/\1/p')"
+    if [ -n "$percent" ]; then
+        case "$direction" in
+            u|l) opt="$opt -p $(expr 100 - "$percent")" ;;
+            d|r) opt="$opt -p $percent" ;;
+        esac
+    elif [ -n "$(echo "$size" | grep -E '^[0-9]+$')" ]; then
+        case "$direction" in
+            u)
+                [ -n "$LINES" ] && max=$LINES || max=$(tput lines)
+                size=$(expr $max - $size)
+                [ $size -lt 0 ] && size=0
+                opt="$opt -l $size"
+                ;;
+            l)
+                [ -n "$COLUMNS" ] && max=$COLUMNS || max=$(tput cols)
+                size=$(expr $max - $size)
+                [ $size -lt 0 ] && size=0
+                opt="$opt -l $size"
+                ;;
+            d|r)
+                opt="$opt -l $size"
+                ;;
+        esac
+    else
+        echo hi
+        echo "$usage" >&2
+        exit 1
+    fi
+fi
+
+id=$RANDOM
+argsf="${TMPDIR:-/tmp}/tmuxdo-args-$id"
+fifo_in="${TMPDIR:-/tmp}/tmuxdo-fifo_in-$id"
+fifo_out="${TMPDIR:-/tmp}/tmuxdo-fifo_out-$id"
+fifo_err="${TMPDIR:-/tmp}/tmuxdo-fifo_err-$id"
+fifo_ret="${TMPDIR:-/tmp}/tmuxdo-fifo_ret-$id"
+
+
+# FUN BEGINS HERE
+
+set -e
+
+cleanup() {
+    rm -f $argsf $fifo_in $fifo_out $fifo_err
+}
+trap cleanup EXIT SIGINT SIGTERM
+
+
+printf '%s' "$cmd" > $argsf
+[ -z "$dup_in"  ] && printf ' < %s' "$fifo_in" >> $argsf
+[ -z "$dup_out" ] && printf ' > %s' "$fifo_out" >> $argsf
+[ -z "$dup_err" ] && printf ' 2> %s' "$fifo_err" >> $argsf
+printf '; echo $? > %s %s' "$fifo_ret" "$close" >> $argsf
+
+
+[ -z "$dup_in"  ] && mkfifo -m o+w $fifo_in
+[ -z "$dup_out" ] && mkfifo -m o+w $fifo_out
+[ -z "$dup_err" ] && mkfifo -m o+w $fifo_err
+mkfifo -m o+w $fifo_ret
+
+
+tmux set-window-option -q synchronize-panes off \;\
+    set-window-option -q remain-on-exit off \;\
+    split-window $opt "sh $argsf" $swap
+
+
+pids=""
+[ -z "$dup_in"  ] && cat > $fifo_in  <&0 & pids="$pids $!"
+[ -z "$dup_out" ] && cat < $fifo_out >&1 & pids="$pids $!"
+[ -z "$dup_err" ] && cat < $fifo_err >&2 & pids="$pids $!"
+
+for pid in $pids; do
+    wait $pid
+done
+
+exit "$(cat $fifo_ret)"
