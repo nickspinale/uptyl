@@ -74,7 +74,6 @@ int main(int argc, char **argv) {
                 }
             }
             execvp(slave_argv[0], slave_argv);
-            printf("no\n");
             break;
         default:
             close(slave);
