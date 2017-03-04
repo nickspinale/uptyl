@@ -1,0 +1,67 @@
+#!/bin/sh
+
+usage="withtty [-ioe] [-twb] [-mcx] [--] CMD [ARGS ...]"
+
+dup=""
+pref=""
+tall=""
+wide=""
+
+while getopts 'ioemxctwbh:' optchar; do
+    case "$optchar" in
+        i) dup="-i $dup" ;;
+        o) dup="-o $dup" ;;
+        e) dup="-e $dup" ;;
+        m) pref="$pref m" ;;
+        c) pref="$pref c" ;;
+        x) pref="$pref x" ;;
+        t) tall=1 ;;
+        w) wide=1 ;;
+        b) tall=1; wide=1 ;;
+        h) echo "$usage"; exit 0 ;;
+    esac
+done
+
+for p in m c x; do
+    if echo $pref | grep -qv $p; then
+        pref="$pref $p"
+    fi
+done
+
+shift $(expr $OPTIND - 1)
+
+if [ -z "$1" ]; then
+    echo "$usage" >&2
+    exit 0
+fi
+
+cmd="$@"
+
+term=$(ps -p $$ | tail -n 1 | cut -d ' ' -f 2)
+
+for p in $prefs; do
+    case $p in
+        m)
+            if [ '(' -z "$wide" -o -z "$tall" ')' -a -n "$term" -a -n "$TMUX" ]; then
+                [ -n "$wide" ] && direction="-d"
+                [ -n "$tall" ] && direction="-r"
+                exec tmuxdo $dup $direction $cmd
+            fi
+            ;;
+        c)
+            if [ -n "$term" ]; then
+                exec $cmd
+            fi
+            ;;
+        x)
+            [ -n "$wide" ] && x=90 || x=25
+            [ -n "$tall" ] && y=50 || y=30
+            if [ -n "$DISPLAY" ] && which urxvt &> /dev/null; then
+                parpty $dup "urxvt -pty-fd \$0 -geometry ${x}x${y}+9999+9999 -xrm '*transient-for: 0'" $cmd
+            fi
+            ;;
+    esac
+done
+
+echo "withtty: ***could not find or create a terminal***" >&2
+exit 1
