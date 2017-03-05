@@ -10,8 +10,7 @@
 extern char *program_invocation_short_name;
 
 static void usage(int code) {
-    FILE *out = code ? stderr : stdout;
-    fprintf(out, "USAGE: %s [-ioe] DRIVER_SCRIPT SLAVE [SLAVE_ARGS ...]\n", program_invocation_short_name);
+    fprintf(stderr, "Usage: %s [-ioe] DRIVER_SCRIPT SLAVE [SLAVE_ARGS ...]\n", program_invocation_short_name);
     exit(code);
 }
 

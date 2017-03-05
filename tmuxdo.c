@@ -1,9 +1,9 @@
 #define _GNU_SOURCE
 
 #include <fcntl.h>
-#include <stdlib.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <wait.h>
@@ -11,8 +11,7 @@
 extern char *program_invocation_short_name;
 
 static void usage(int code) {
-    FILE *out = code ? stderr : stdout;
-    fprintf(out, "USAGE: %s CMD [ARGS ...]\n", program_invocation_short_name);
+    fprintf(stderr, "Usage: %s CMD [ARGS ...]\n", program_invocation_short_name);
     exit(code);
 }
 
