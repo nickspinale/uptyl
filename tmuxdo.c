@@ -13,7 +13,7 @@
 extern char *program_invocation_short_name;
 
 static void usage(int code) {
-    fprintf(stderr, "Usage: %s [-z] [-s SIZE[%]] CMD [ARGS ...]\n", program_invocation_short_name);
+    fprintf(stderr, "Usage: %s [-z] [-s SIZE[%%]] CMD [ARGS ...]\n", program_invocation_short_name);
     exit(code);
 }
 
@@ -27,6 +27,53 @@ struct args {
     char *size;
     char **cmdv;
 };
+
+
+void parse_args(int argc, char **argv, struct args *args);
+char **tmux_argv(struct args *args, int child);
+int do_tmux(struct args *args, int child);
+
+
+int main(int argc, char **argv) {
+
+    struct args args;
+
+    int child;
+    int p0[2];
+    int p1[2];
+    char dummy;
+    int stat;
+
+    int tmux;
+
+    parse_args(argc, argv, &args);
+
+    pipe(p0);
+    pipe(p1);
+
+    if ((child = fork())) {
+
+        read(p0[0], &dummy, 1);
+        kill(child, SIGSTOP);
+        write(p1[1], &dummy, 1);
+
+        tmux = do_tmux(&args, child);
+        waitpid(child, &stat, 0);
+        kill(tmux, SIGTERM);
+
+        return 0;
+
+    } else {
+
+        setpgid(0, 0);
+        write(p0[1], &dummy, 1);
+        read(p1[0], &dummy, 1);
+        execvp(args.cmdv[0], args.cmdv);
+        return 1;
+
+    }
+
+}
 
 
 void parse_args(int argc, char **argv, struct args *args) {
@@ -141,48 +188,6 @@ int do_tmux(struct args *args, int child) {
     } else {
         dup2(fd[1], 1);
         execvp(targv[0], targv);
-    }
-
-}
-
-
-int main(int argc, char **argv) {
-
-    struct args args;
-
-    int child;
-    int p0[2];
-    int p1[2];
-    char dummy;
-    int stat;
-
-    int tmux;
-
-    parse_args(argc, argv, &args);
-
-    pipe(p0);
-    pipe(p1);
-
-    if ((child = fork())) {
-
-        read(p0[0], &dummy, 1);
-        kill(child, SIGSTOP);
-        write(p1[1], &dummy, 1);
-
-        tmux = do_tmux(&args, child);
-        waitpid(child, &stat, 0);
-        kill(tmux, SIGTERM);
-
-        return 0;
-
-    } else {
-
-        setpgid(0, 0);
-        write(p0[1], &dummy, 1);
-        read(p1[0], &dummy, 1);
-        execvp(args.cmdv[0], args.cmdv);
-        return 1;
-
     }
 
 }
