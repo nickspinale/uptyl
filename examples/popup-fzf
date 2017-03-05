@@ -3,9 +3,9 @@
 # Filter stdin to stdout using fzf in a popup urxvt window.
 
 # Notes on urxvt:
-#   * +9999 as a geometry offset seems to just center the window.
+#   * +9999 as a geometry offset just centers a transient window in xmonad.
 #     This behavior is undocumented.
-#   * An empty or 0 value for the '*transient-for' resource seems to just
-#     mean the root window. This behavior is also undocumented.
+#   * An empty or 0 value for the '*transient-for' resource just means the
+#     root window. This behavior is also undocumented.
 
 parpty -e 'urxvt -pty-fd $0 -geometry 40x25+9999+9999 -xrm "*transient-for: 0"' fzf
