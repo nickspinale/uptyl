@@ -1,0 +1,32 @@
+#!/bin/sh
+
+usage="urxvtdo [-t] [-g GEOMETRY] [--] CMD [ARGS ...]"
+
+geom=""
+trans=""
+
+while getopts 'tg:h' optchar; do
+    case "$optchar" in
+        t) trans="-xrm '*transient-for: 0'" ;;
+        g) geom="-geometry $OPTARG" ;;
+        h) echo "$usage"; exit 0 ;;
+    esac
+done
+
+shift $(expr $OPTIND - 1)
+
+if [ -z "$1" ]; then
+    echo "$usage" >&2
+    exit 0
+fi
+
+cmd="$@"
+
+term="/dev/$(ps -p $$ | tail -n 1 | cut -d ' ' -f 2)"
+
+fds=""
+[ "$(readlink /proc/$$/fd/0)" == "$term" ] && fds="-i $fds"
+[ "$(readlink /proc/$$/fd/1)" == "$term" ] && fds="-o $fds"
+[ "$(readlink /proc/$$/fd/2)" == "$term" ] && fds="-e $fds"
+
+parpty $fds "urxvt -pty-fd \$0 $geom $trans" $cmd

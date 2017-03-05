@@ -6,7 +6,7 @@ pref=""
 tall=""
 wide=""
 
-while getopts 'ioemxctwbh:' optchar; do
+while getopts 'ioemxctwbh' optchar; do
     case "$optchar" in
         m) pref="$pref m" ;;
         c) pref="$pref c" ;;
@@ -52,8 +52,7 @@ for p in $pref; do
             [ -n "$wide" ] && x=120 || x=40
             [ -n "$tall" ] && y=35 || y=30
             if [ -n "$DISPLAY" ] && which urxvt &> /dev/null; then
-                # TODO no -e
-                exec parpty -e "urxvt -pty-fd \$0 -geometry ${x}x${y}+9999+9999 -xrm '*transient-for: 0'" $cmd
+                exec urxvtdo -t -g "${x}x${y}+9999+9999" $cmd
             fi
             ;;
     esac

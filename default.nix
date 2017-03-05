@@ -7,6 +7,7 @@ stdenv.mkDerivation {
     mkdir -p $out/bin
     gcc -lutil -o $out/bin/parpty ${./parpty.c}
     gcc -lutil -o $out/bin/tmuxdo ${./tmuxdo.c}
+    cp ${./urxvtdo} $out/bin/urxvtdo
     cp ${./withtty} $out/bin/withtty
   '';
 }
