@@ -28,4 +28,24 @@ This program depends on [reptyr](https://github.com/nelhage/reptyr).
 If it doesn't work, there may be a `ptrace` problem.
 Try `sudo sh -c 'echo 0 > /proc/sys/kernel/yama/ptrace_scope'`.
 
-## MORE DOCUMENTATION COMING SOON
+## urxvto
+
+```
+Usage: tmuxdo [-t] [-g GEOMETRY] [--] CMD [ARGS ...]
+```
+
+Effectively runs the given `CMD` with `ARGS` in a new urxvt window by changing all file descriptors that point to the current controlling terminal to the pty newly created by urxvt.
+`-t` causes the new window to be transient.
+
+## withtty
+
+```
+Usage withtty [-twb] [-mcx] [--] CMD [ARGS ...]
+```
+
+Effectively runs the given `CMD` with `ARGS` in some tty somewhere, based on the environment and some given preferences.
+
+`-m`, `-c`, and `-x` indicate preference order of a tmux pane, the current tty, or a urxvt window.
+Those not provided as arguments will be filled in afterwards in the order `mxc`.
+
+`-t` is for a tall tty, `-w` for wide, and `-b` for both ("big").
