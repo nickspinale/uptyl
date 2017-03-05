@@ -12,7 +12,7 @@ extern char *program_invocation_short_name;
 static void usage(int code) {
     FILE *out = code ? stderr : stdout;
     fprintf(out, "USAGE: %s [-ioe] DRIVER_SCRIPT SLAVE [SLAVE_ARGS ...]\n", program_invocation_short_name);
-    exit(code ? 1 : 0);
+    exit(code);
 }
 
 int main(int argc, char **argv) {
@@ -54,33 +54,26 @@ int main(int argc, char **argv) {
     argv[argc - 1] = NULL;
 
     if (openpty(&master, &slave, NULL, NULL, NULL)) {
-        return -1;
+        return 1;
     }
  
-    switch (pid = fork ()) {
-        case -1:
-            close(master);
-            close(slave);
-            break;
-        case 0:
-            close(master);
-            setsid();
-            if (ioctl(slave, TIOCSCTTY, (char *)NULL)) {
-                return -1;
+    if ((pid = fork ())) {
+        close(slave);
+        sprintf(master_s, "%d", master);
+        execvp("sh", (char *const[]) {"sh", "-c", driver_script, master_s, NULL});
+    } else {
+        close(master);
+        setsid();
+        if (ioctl(slave, TIOCSCTTY, (char *)NULL)) {
+            return 1;
+        }
+        for (i = 0; i < 3; i++) {
+            if (fds & (1 << i)) {
+                dup2(slave, i);
             }
-            for (i = 0; i < 3; i++) {
-                if (fds & (1 << i)) {
-                    dup2(slave, i);
-                }
-            }
-            execvp(slave_argv[0], slave_argv);
-            break;
-        default:
-            close(slave);
-            sprintf(master_s, "%d", master);
-            execvp("sh", (char *const[]) {"sh", "-c", driver_script, master_s, NULL});
-            break;
+        }
+        execvp(slave_argv[0], slave_argv);
     }
 
-    return -1;
+    return 1;
 }
