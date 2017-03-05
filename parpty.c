@@ -14,6 +14,7 @@ static void usage(int code) {
     exit(code);
 }
 
+// TODO replace [-ioe] with discovery
 int main(int argc, char **argv) {
 
     int master, slave, pid;

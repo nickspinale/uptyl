@@ -1,17 +1,13 @@
 #!/bin/sh
 
-usage="withtty [-ioe] [-twb] [-mcx] [--] CMD [ARGS ...]"
+usage="withtty [-twb] [-mcx] [--] CMD [ARGS ...]"
 
-dup=""
 pref=""
 tall=""
 wide=""
 
 while getopts 'ioemxctwbh:' optchar; do
     case "$optchar" in
-        i) dup="-i $dup" ;;
-        o) dup="-o $dup" ;;
-        e) dup="-e $dup" ;;
         m) pref="$pref m" ;;
         c) pref="$pref c" ;;
         x) pref="$pref x" ;;
@@ -39,13 +35,12 @@ cmd="$@"
 
 term=$(ps -p $$ | tail -n 1 | cut -d ' ' -f 2)
 
-for p in $prefs; do
+for p in $pref; do
     case $p in
         m)
             if [ '(' -z "$wide" -o -z "$tall" ')' -a -n "$term" -a -n "$TMUX" ]; then
-                [ -n "$wide" ] && direction="-d"
-                [ -n "$tall" ] && direction="-r"
-                exec tmuxdo $dup $direction $cmd
+                [ -n "$tall" ] && $z="-z"
+                exec tmuxdo $z $cmd
             fi
             ;;
         c)
@@ -54,10 +49,11 @@ for p in $prefs; do
             fi
             ;;
         x)
-            [ -n "$wide" ] && x=90 || x=25
-            [ -n "$tall" ] && y=50 || y=30
+            [ -n "$wide" ] && x=120 || x=40
+            [ -n "$tall" ] && y=35 || y=25
             if [ -n "$DISPLAY" ] && which urxvt &> /dev/null; then
-                parpty $dup "urxvt -pty-fd \$0 -geometry ${x}x${y}+9999+9999 -xrm '*transient-for: 0'" $cmd
+                # TODO no -e
+                exec parpty -e "urxvt -pty-fd \$0 -geometry ${x}x${y}+9999+9999 -xrm '*transient-for: 0'" $cmd
             fi
             ;;
     esac

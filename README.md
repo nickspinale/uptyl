@@ -18,14 +18,13 @@ See `./examples/popup-fzf` for an example usage.
 ## tmuxdo
 
 ```
-Usage: tmuxdo [-ioe] [-u|d|l|r] [-s SIZE[%]] [--] CMD [ARGS ...]
+Usage: tmuxdo [-z] [-s SIZE[%]] [--] CMD [ARGS ...]
 ```
 
-Runs the given `CMD` with `ARGS` in a new tmux pane (whose location/size is optionally given).
-The file descriptors given by `[-ioe]` are set to the pane's pty,
-and the rest are (in effect) not changed from those of the calling process.
+Effectively runs the given `CMD` with `ARGS` in a new tmux pane by changing all file descriptors that point to the current controlling terminal to the pty newly created by tmux.
+`-z` splits horizontally instead of vertically.
 
-This program depends on [reptyr]
+This program depends on [reptyr](https://github.com/nelhage/reptyr).
 If it doesn't work, there may be a `ptrace` problem.
 Try `sudo sh -c 'echo 0 > /proc/sys/kernel/yama/ptrace_scope'`.
 
