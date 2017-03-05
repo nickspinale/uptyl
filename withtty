@@ -50,7 +50,7 @@ for p in $pref; do
             ;;
         x)
             [ -n "$wide" ] && x=120 || x=40
-            [ -n "$tall" ] && y=35 || y=25
+            [ -n "$tall" ] && y=35 || y=30
             if [ -n "$DISPLAY" ] && which urxvt &> /dev/null; then
                 # TODO no -e
                 exec parpty -e "urxvt -pty-fd \$0 -geometry ${x}x${y}+9999+9999 -xrm '*transient-for: 0'" $cmd
