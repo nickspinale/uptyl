@@ -1,7 +1,6 @@
 #define _GNU_SOURCE
 
 #include <fcntl.h>
-#include <malloc.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +29,6 @@ struct args {
 
 
 void parse_args(int argc, char **argv, struct args *args);
-char **tmux_argv(struct args *args, int child);
 int do_tmux(struct args *args, int child);
 
 
@@ -127,67 +125,25 @@ void parse_args(int argc, char **argv, struct args *args) {
 }
 
 
-char **tmux_argv(struct args *args, int child) {
-
-    int i = 0;
-    char *cmd = malloc(256);
-    char **argv = malloc(256);
-
-    sprintf(cmd, "reptyr %d && kill -CONT %d && sleep infinity", child, child);
-
-    argv[i++] = "tmux";
-    argv[i++] = "set-window-option";
-    argv[i++] = "-q";
-    argv[i++] = "synchronize-panes";
-    argv[i++] = "off";
-    argv[i++] = ";";
-    argv[i++] = "set-window-option";
-    argv[i++] = "-q";
-    argv[i++] = "remain-on-exit";
-    argv[i++] = "off";
-    argv[i++] = ";";
-    argv[i++] = "split-window";
-    argv[i++] = "-P";
-    argv[i++] = "-F";
-    argv[i++] = "#{pane_pid}";
-
-    if (args->dir == HORIZONTAL) {
-        argv[i++] = "-h";
-    }
-    if (args->st != NONE) {
-        argv[i++] = args->st == PERCENT ? "-p" : "-l";
-        argv[i++] = args->size;
-    }
-
-    argv[i++] = "sh";
-    argv[i++] = "-c";
-    argv[i++] = cmd;
-    argv[i++] = NULL;
-
-    return argv;
-}
-
-
 int do_tmux(struct args *args, int child) {
 
     int pid;
-    int fd[2];
-    char line[256];
-    char **targv;
     FILE *out;
+    char line[256];
+    char cmd[1024];
 
-    targv = tmux_argv(args, child);
+    sprintf(cmd, "tmux"
+        " set-window-option -q synchronize-panes off ';'"
+        " set-window-option -q remain-on-exit off ';'"
+        " split-window -P -F '#{pane_pid}' %s %s %s"
+        " sh -c 'reptyr %d && kill -CONT %d && sleep infinity'",
+        args->dir == HORIZONTAL ? "-h" : "",
+        args->st == ABSOLUTE ? "-l" : args->st == PERCENT ? "-p" : "",
+        args->st == NONE ? "" : args->size,
+        child, child);
 
-    pipe(fd);
-
-    if (fork()) {
-        out = fdopen(fd[0], "r");
-        fgets(line, sizeof(line), out);
-        sscanf(line, "%d\n", &pid);
-        return pid;
-    } else {
-        dup2(fd[1], 1);
-        execvp(targv[0], targv);
-    }
-
+    out = popen(cmd, "r");
+    fgets(line, sizeof(line), out);
+    sscanf(line, "%d\n", &pid);
+    return pid;
 }
