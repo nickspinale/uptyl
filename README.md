@@ -31,11 +31,11 @@ Try `sudo sh -c 'echo 0 > /proc/sys/kernel/yama/ptrace_scope'`.
 ## urxvto
 
 ```
-Usage: tmuxdo [-t] [-g GEOMETRY] [--] CMD [ARGS ...]
+urxvtdo [-ioe] [-g GEOMETRY] [--] CMD [ARGS ...]
 ```
 
-Effectively runs the given `CMD` with `ARGS` in a new urxvt window by changing all file descriptors that point to the current controlling terminal to the pty newly created by urxvt.
-`-t` causes the new window to be transient.
+Effectively runs the given `CMD` with `ARGS` in a new urxvt window by changing the given file descriptors to the pty newly created by urxvt.
+`-g` causes the new window to be transient with the given geometry.
 
 ## withtty
 
