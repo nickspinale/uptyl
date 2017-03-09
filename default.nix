@@ -8,6 +8,6 @@ stdenv.mkDerivation {
     gcc -lutil -o $out/bin/parpty ${./parpty.c}
     gcc -lutil -o $out/bin/tmuxdo ${./tmuxdo.c}
     cp ${./urxvtdo} $out/bin/urxvtdo
-    cp ${./withtty} $out/bin/withtty
+    cp ${./tmuxtry} $out/bin/tmuxtry
   '';
 }

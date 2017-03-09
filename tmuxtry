@@ -1,0 +1,21 @@
+#!/bin/sh
+
+usage="Usage: tmuxtry [-z] [-s SIZE[%]] CMD [ARGS ...]"
+
+args=""
+
+while getopts 'hzs:' optchar; do
+    case "$optchar" in
+        z) args="$args -z" ;;
+        s) args="$args -s $OPTARG" ;;
+        h) echo "$usage"; exit 0 ;;
+    esac
+done
+
+shift $(expr $OPTIND - 1)
+
+if [ -n "$TMUX" ]; then
+    tmuxdo $args -- $@
+else
+    $@
+fi

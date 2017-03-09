@@ -28,6 +28,8 @@ This program depends on [reptyr](https://github.com/nelhage/reptyr).
 If it doesn't work, there may be a `ptrace` problem.
 Try `sudo sh -c 'echo 0 > /proc/sys/kernel/yama/ptrace_scope'`.
 
+`tmuxtry` does the same thing, unless `$TMUX` is not set, in which case `CMD [ARGS ...]` is run normally.
+
 ## urxvto
 
 ```
@@ -37,7 +39,7 @@ urxvtdo [-ioe] [-g GEOMETRY] [--] CMD [ARGS ...]
 Effectively runs the given `CMD` with `ARGS` in a new urxvt window by changing the given file descriptors to the pty newly created by urxvt.
 `-g` causes the new window to be transient with the given geometry.
 
-## withtty
+## withtty [TODO]
 
 ```
 Usage withtty [-twb] [-mcx] [--] CMD [ARGS ...]
