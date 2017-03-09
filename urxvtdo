@@ -24,4 +24,4 @@ fi
 
 cmd="$@"
 
-parpty $fds "urxvt -pty-fd \$0 $geom" $cmd
+parpty $fds -- "urxvt -pty-fd \$0 $geom" $cmd
