@@ -1,11 +1,7 @@
-#define _GNU_SOURCE
-
 #include <pty.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <getopt.h>
-#include <termios.h>
 
 extern char *program_invocation_short_name;
 
@@ -14,7 +10,6 @@ static void usage(int code) {
     exit(code);
 }
 
-// TODO replace [-ioe] with discovery
 int main(int argc, char **argv) {
 
     int master, slave, pid;
@@ -57,10 +52,10 @@ int main(int argc, char **argv) {
         return 1;
     }
  
-    if ((pid = fork ())) {
+    if ((pid = fork())) {
         close(slave);
-        sprintf(master_s, "%d", master);
-        execvp("sh", (char *const[]) {"sh", "-c", driver_script, master_s, NULL});
+        snprintf(master_s, sizeof(master_s), "%d", master);
+        execvp("sh", (char *const[]){"sh", "-c", driver_script, master_s, NULL});
     } else {
         close(master);
         setsid();

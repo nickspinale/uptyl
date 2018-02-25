@@ -1,13 +1,7 @@
-#define _GNU_SOURCE
-
-#include <fcntl.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <wait.h>
-
 
 extern char *program_invocation_short_name;
 
@@ -36,13 +30,10 @@ int main(int argc, char **argv) {
 
     struct args args;
 
-    int child;
-    int p0[2];
-    int p1[2];
+    int child, tmux;
+    int p0[2], p1[2];
     char dummy;
     int stat;
-
-    int tmux;
 
     parse_args(argc, argv, &args);
 
@@ -67,10 +58,9 @@ int main(int argc, char **argv) {
         write(p0[1], &dummy, 1);
         read(p1[0], &dummy, 1);
         execvp(args.cmdv[0], args.cmdv);
+
         return 1;
-
     }
-
 }
 
 
@@ -90,7 +80,7 @@ void parse_args(int argc, char **argv, struct args *args) {
                 break;
             case 's':
                 args->size = optarg;
-                while (1) {
+                for (;;) {
                     if ('0' <= *optarg && *optarg <= '9') {
                         optarg++;
                     } else if (*optarg == '%' && *(optarg + 1) == 0) {
@@ -115,24 +105,22 @@ void parse_args(int argc, char **argv, struct args *args) {
     if (argc - optind < 1) {
         usage(1);
     }
-
     args->cmdv = argv + optind - 1;
     for (i = optind - 1; i < argc - 1; i++) {
         argv[i] = argv[i + 1];
     }
     argv[argc - 1] = NULL;
-
 }
 
 
 int do_tmux(struct args *args, int child) {
 
-    int pid;
+    int n, pid;
     FILE *out;
-    char line[256];
     char cmd[1024];
 
-    sprintf(cmd, "tmux"
+    n = snprintf(cmd, sizeof(cmd),
+        "tmux"
         " set-window-option -q synchronize-panes off ';'"
         " set-window-option -q remain-on-exit off ';'"
         " split-window -P -F '#{pane_pid}' %s %s %s"
@@ -141,9 +129,14 @@ int do_tmux(struct args *args, int child) {
         args->st == ABSOLUTE ? "-l" : args->st == PERCENT ? "-p" : "",
         args->st == NONE ? "" : args->size,
         child, child);
+    
+    if (n >= sizeof(cmd)) {
+        fputs("-tmuxdo: size too long", stderr);
+        exit(1);
+    }
 
     out = popen(cmd, "r");
-    fgets(line, sizeof(line), out);
-    sscanf(line, "%d\n", &pid);
+    fgets(cmd, sizeof(cmd), out);
+    sscanf(cmd, "%d\n", &pid);
     return pid;
 }
